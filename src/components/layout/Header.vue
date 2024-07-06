@@ -7,9 +7,9 @@
       mode="horizontal"
   >
     <el-menu-item index="/">首页</el-menu-item>
-    <el-sub-menu index="/home1">
+    <el-sub-menu index="/test">
       <template #title>演示代码</template>
-      <el-menu-item index="/home1">test1</el-menu-item>
+      <el-menu-item index="/test/test1">test1</el-menu-item>
       <el-menu-item index="2-2">itest2</el-menu-item>
     </el-sub-menu>
   </el-menu>

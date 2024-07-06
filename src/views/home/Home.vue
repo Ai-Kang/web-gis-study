@@ -7,13 +7,13 @@
 // 设置token
 import * as Cesium from "cesium"
 import {onMounted} from "vue";
-import yn from "/public/json/ynsxj84.json"
-import fj from "/public/glb/Cesium_Air.glb"
+import img from "/public/img/img.png"
 
 Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIxOTU2ZWQyNy1jMmMzLTQwZTMtOTI1My0yODk1NTY5ZGIzMjkiLCJpZCI6OTQyNDksImlhdCI6MTcyMDE2NTQyMX0.XuU0b2FLYis2zt4HH3aNyV8LXuy7Ju6rBPgwWfz4z8Y"
 
 // 因为加载时div还未挂在好所以使用生命周期处理
-onMounted(() => {
+onMounted(async () => {
+
   let cesiumMap = new Cesium.Viewer("cesiumMap", {
     infoBox: false,
     // 关闭自带地图选择
@@ -22,115 +22,149 @@ onMounted(() => {
     animation: false,
     // 关闭时间轴
     timeline: false,
-
+    // 全屏按钮
+    fullscreenButton: false,
+    // 主页按钮
+    homeButton: false,
+    // 使用浏览器推荐的分辨率
+    useBrowserRecommendedResolution: true,
+    // 切换地图平铺
+    sceneModePicker: false,
+    // 帮助按钮(问号)
+    navigationHelpButton: false,
+    // 关闭绿色选中框
+    selectionIndicator: false,
+    // 搜索地名按钮
+    geocoder: false,
+    // 设置默认地图（云南省天地图）
+    baseLayer: new Cesium.ImageryLayer(new Cesium.OpenStreetMapImageryProvider({
+      // url: "https://tile.openstreetmap.org/"
+      url: "https://maps.ynmap.cn/arcgis/rest/services/TdtYn/tdtYnImg100cm84_2022/MapServer/tile/{z}/{y}/{x}"
+    })),
   });
+  // 设置地形
+  cesiumMap.scene.setTerrain(
+      new Cesium.Terrain(
+          Cesium.CesiumTerrainProvider.fromIonAssetId(3957)
+      ),
+  );
+  // 加载模型
+  /*const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(96188);
+  tileset.style = new Cesium.Cesium3DTileStyle({
+    color: "color('blue',0.5)",
+    show: true
+  })
+  cesiumMap.scene.primitives.add(tileset)*/
 
-  // 显示隐藏地球
-  cesiumMap.scene.globe.show = true;
+  // 空间数据加载-点
+  cesiumMap.entities.add({
+    // 设置位置
+    position: Cesium.Cartesian3.fromDegrees(99.819853, 23.484545, 0),
+    point: {
+      pixelSize: 50,
+      color: new Cesium.Color(1, 1, 0, 1)
+    }
+  })
+
+  // 空间数据加载-线条
+  cesiumMap.entities.add({
+    polyline: {
+      // 可见
+      show: true,
+      // 设置位置
+      positions: new Cesium.Cartesian3.fromDegreesArray([99.819853, 23.484545, 99.829753, 23.484545]),
+      // 设置颜色
+      material: new Cesium.Color(1, 1, 0, 1),
+      // 设置线宽度
+      width: 5,
+    },
+  })
+
+  // 空间数据加载-面
+  cesiumMap.entities.add({
+    // 设置位置
+    position: Cesium.Cartesian3.fromDegrees(99.819853, 23.454545, 0),
+    plane: {
+      // 设置平铺
+      plane: new Cesium.Plane(Cesium.Cartesian3.UNIT_Z, 0),
+      // 设置长宽
+      dimensions: new Cesium.Cartesian2(300, 300),
+      // 设置颜色
+      material: new Cesium.Color(1, 1, 0, 1),
+      // 是否显示边框
+      outline: true,
+      // 边框颜色红色
+      outlineColor: Cesium.Color.RED,
+    },
+  })
+
+  // 空间数据加载-贴图
+  cesiumMap.entities.add({
+    // 设置位置
+    position: Cesium.Cartesian3.fromDegrees(99.839853, 23.454545, 0),
+    plane: {
+      // 设置平铺
+      plane: new Cesium.Plane(Cesium.Cartesian3.UNIT_X, 0),
+      // plane: new Cesium.Plane(Cesium.Cartesian3.UNIT_Z, 0),
+      // 设置长宽
+      dimensions: new Cesium.Cartesian2(300, 300),
+      // 贴入一张图片
+      material: img,
+      // 是否显示边框
+      outline: true,
+      // 边框颜色红色
+      outlineColor: Cesium.Color.RED,
+    },
+  })
+
+  // 空间数据加载-三维拉伸
+  const delet = cesiumMap.entities.add({
+    id: 'study',
+    // 设置位置
+    position: Cesium.Cartesian3.fromDegrees(99.839853, 23.454545, 0),
+    polygon: {
+      hierarchy: Cesium.Cartesian3.fromDegreesArray([99.839853, 23.454545, 99.839853, 23.457545, 99.829853, 23.454545]),
+      // 设置颜色
+      material: Cesium.Color.RED,
+      // 拉伸
+      extrudedHeight: 200,
+    },
+  })
+  // 删除数据
+  // cesiumMap.entities.remove(delet);
+  // 全部删除
+  // cesiumMap.entities.removeAll();
+
+  /**
+   * 鼠标交互
+   */
+  let handler = new Cesium.ScreenSpaceEventHandler(cesiumMap.scene.canvas);
+  // 监听
+  handler.setInputAction((event) => {
+    // 获取点击的对象
+    let pick = cesiumMap.scene.pick(event.position);
+    // 判断位置信息是否为空
+    if (Cesium.defined(pick) && pick.id.id === "study") {
+      alert("需要删除吗")
+    }
+  },Cesium.ScreenSpaceEventType.LEFT_CLICK)
+
+  /**
+   * 加载3dtiles
+   */
+  try {
+    const tileset = await Cesium.Cesium3DTileset.fromUrl("http://127.0.0.1:8081/tileset.json");
+    cesiumMap.scene.primitives.add(tileset);
+  } catch (error) {
+    console.error(`Error creating tileset: ${error}`);
+  }
+
   // 设置相机
   cesiumMap.scene.camera.setView({
     // 相机位置 x,y,z
+    // destination: Cesium.Cartesian3.fromDegrees(121.49, 31.23, 2000)
     destination: Cesium.Cartesian3.fromDegrees(99.819853, 23.484545, 2000)
   })
-  // 在地球上添加一个圆点
-  cesiumMap.entities.add({
-    // 点的位置
-    position: Cesium.Cartesian3.fromDegrees(99.819853, 23.484545, 0),
-    // 创建点
-    point: {
-      // 大小
-      pixelSize: 10,
-      // 设置颜色
-      color: new Cesium.Color(0, 1, 0, 1)
-    }
-  });
-  // CzmlDataSource KmlDataSource GeoJsonDataSource
-  let dataSource = Cesium.GeoJsonDataSource.load(yn);
-  // 加入数据
-  // cesiumMap.dataSources.add(dataSource)
-
-  /**
-   * 坐标系
-   * wgs84经纬度坐标系（没有实际的对象）
-   * wgs84弧度坐标系（Cartographic）
-   * 笛卡尔空间直角坐标系（Cartesian3）
-   * 平面坐标系（Cartesian2）
-   * 4D笛卡尔积坐标系（Cartesian4）
-   */
-
-  /**
-   * 相机
-   * setView 切换视角，直接切换
-   * flyTo 切换视角，具有飞入效果，飞行时间等
-   * lookAt 拖动时，围绕旋转，无法移动位置
-   * ViewBoundingSphere 没有飞入效果，给一个指定目标点更好的观测
-   */
-      // 创建飞行目的地坐标
-  let position1 = Cesium.Cartesian3.fromDegrees(109.819853, 23.484545, 2000);
-  // 设定相机1
-  cesiumMap.camera.setView({
-    // 相机目的地
-    destination: position1,
-    // 视口方向
-    orientation: {
-      // 水平旋转 指数0时指向正北
-      heading: Cesium.Math.toRadians(0),
-      // 垂直方向旋转 -90时俯视地面
-      pitch: Cesium.Math.toRadians(-90),
-      // 沿着z轴的旋转
-      roll: 0,
-    }
-  });
-
-  // 设定相机2
-  let position2 = Cesium.Cartesian3.fromDegrees(99.819853, 23.484545, 2000);
-  cesiumMap.camera.flyTo({
-    // 相机目的地
-    destination: position2,
-    // 视口方向
-    orientation: {
-      // 水平旋转 指数0时指向正北
-      heading: Cesium.Math.toRadians(0),
-      // 垂直方向旋转 -90时俯视地面
-      pitch: Cesium.Math.toRadians(-90),
-      // 沿着z轴的旋转
-      roll: 0,
-    },
-    // 飞行时间10s
-    duration: 10,
-  });
-
-  // 设定相机3
-  let position3 = Cesium.Cartesian3.fromDegrees(99.819853, 23.484545);
-  cesiumMap.camera.lookAt(position3, new Cesium.HeadingPitchRange(
-      //水平旋转 指数0时指向正北
-      Cesium.Math.toRadians(0),
-      // 垂直方向旋转 -90时俯视地面
-      Cesium.Math.toRadians(-90),
-      // 高度
-      2500
-  ));
-
-  // 设定相机3
-  // 创建飞机模型
-  let entity1 = cesiumMap.entities.add({
-    // 位置
-    position: position2,
-    // 模型俯仰角（飞机位置,）
-    orientation: Cesium.Transforms.headingPitchRollQuaternion(position2, new Cesium.HeadingPitchRoll(-90, 0, 0)),
-    // 加载模型
-    model: {
-      uri: fj,
-      // 模型缩放情况下最小的大小
-      minimumPixelSize: 100,
-      // 模型缩放最大的比例
-      maximumPixelSize: 10000,
-      // 显示模型
-      show: true
-    }
-  });
-  // 加载模型((视点位置,物体的距离),相机朝向)
-  cesiumMap.camera.viewBoundingSphere(new Cesium.BoundingSphere(position2, 100), new Cesium.HeadingPitchRange(0, 0, 0));
 });
 
 </script>

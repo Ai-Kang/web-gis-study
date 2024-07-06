@@ -1,21 +1,34 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import {createRouter, createWebHistory} from 'vue-router'
 import HomeView from '@/views/home/Home.vue'
-import Home1View from '@/views/home/Home1.vue'
+import test1 from '@/views/test/Test1.vue'
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [
-    {
-      path: '/',
-      name: 'home',
-      component: HomeView
-    },
-    {
-      path: '/home1',
-      name: 'home1',
-      component: Home1View
-    },
-  ]
+    history: createWebHistory(import.meta.env.BASE_URL),
+    routes: [
+        {
+            path: '/',
+            name: '/',
+            redirect: "/home",
+            children:[
+                {
+                    path: '/home',
+                    name: 'home',
+                    component: HomeView
+                },
+            ]
+        },
+        {
+            path: "/test",
+            redirect: "/test1",
+            children: [
+                {
+                    path: '/test/test1',
+                    name: 'test1',
+                    component: test1
+                },
+            ]
+        }
+    ]
 })
 
 export default router
